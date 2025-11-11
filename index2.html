@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>HBD Love — Cake & Tree</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #fff;
+            text-align: center;
+        }
+
+        #main {
+            padding: 12px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        #error {
+            display: none;
+            color: #b00;
+            padding: 6px;
+        }
+
+        #cake-container {
+            display: block;
+            position: relative;
+            width: 560px;
+            max-width: 94%;
+            margin: 40px auto;
+        }
+
+        #cake-img {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.18);
+        }
+
+        .candle {
+            position: absolute;
+            width: 14px;
+            height: 50px;
+            background: linear-gradient(#fff, #f0f0f0);
+            border-radius: 4px;
+            z-index: 60;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .candle .wick {
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            width: 2px;
+            height: 12px;
+            background: #222;
+            transform: translateX(-50%);
+        }
+
+        .flame {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 28px;
+            pointer-events: none;
+            transition: opacity 450ms ease, transform 450ms ease;
+            z-index: 100;
+            filter: drop-shadow(0 2px 6px rgba(255, 140, 0, 0.45));
+        }
+
+        .flame svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        @keyframes flicker {
+            0% {
+                transform: translateX(-50%) translateY(0) scale(1);
+            }
+
+            50% {
+                transform: translateX(-50%) translateY(-2px) scale(0.95);
+            }
+
+            100% {
+                transform: translateX(-50%) translateY(0) scale(1);
+            }
+        }
+
+        .flame {
+            animation: flicker 360ms infinite;
+            transform-origin: 50% 100%;
+        }
+
+        .flame.out {
+            opacity: 0;
+            transform: translateX(-50%) translateY(8px) scale(0.6);
+            animation-play-state: paused;
+        }
+
+        .puff {
+            position: absolute;
+            top: -34px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            opacity: 0;
+            transition: opacity 600ms, transform 600ms;
+            pointer-events: none;
+        }
+
+        .puff.show {
+            opacity: .95;
+            transform: translateX(-50%) translateY(-14px);
+        }
+
+        .c1 {
+            left: 25%;
+            bottom: 160px;
+        }
+
+        .c2 {
+            left: 37%;
+            bottom: 160px;
+        }
+
+        .c3 {
+            left: 50%;
+            bottom: 160px;
+        }
+
+        .c4 {
+            left: 63%;
+            bottom: 160px;
+        }
+
+        .c5 {
+            left: 75%;
+            bottom: 160px;
+        }
+
+        #mic-controls {
+            margin-top: 14px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        .btn.primary {
+            background: #ff7b7b;
+            color: #fff;
+        }
+
+        .btn.ghost {
+            background: transparent;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        #mic-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #cfcfcf;
+            box-shadow: 0 0 6px rgba(0, 0, 0, 0.08);
+        }
+
+        #mic-indicator.listening {
+            background: #5fe26b;
+            box-shadow: 0 0 10px rgba(95, 226, 107, 0.6);
+        }
+
+        #wrap {
+            display: none;
+            margin-top: 18px;
+        }
+
+        #canvas {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            border-radius: 6px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+        }
+
+        #code {
+            display: none;
+            font-size: 18px;
+            margin-top: 12px;
+            line-height: 1.6;
+        }
+
+        #clock-box {
+            display: none;
+            font-size: 16px;
+            margin-top: 8px;
+        }
+
+        @media(max-width:600px) {
+            .candle {
+                height: 40px;
+            }
+
+            .flame {
+                width: 14px;
+                height: 20px;
+                top: -22px;
+            }
+
+            .c1,
+            .c2,
+            .c3,
+            .c4,
+            .c5 {
+                bottom: 120px;
+            }
+        }
+
+        .flower {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fffacd, #ff69b4);
+            box-shadow: 0 0 10px #ff69b4, 0 0 6px #fffacd;
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="main">
+        <div id="error">Your browser doesn't support canvas — try Chrome/Firefox.</div>
+
+        <!-- Audio -->
+        <audio id="myAudio" style="display:none;" loop>
+            <source src="aud.mp3" type="audio/mp3">
+        </audio>
+
+        <!-- Cake Scene -->
+        <div id="cake-container" aria-live="polite">
+            <img id="cake-img" src="img.png" alt="Birthday Cake">
+            <div class="candle c1">
+                <div class="wick"></div>
+                <div class="flame" id="f1"><svg viewBox="0 0 24 40">
+                        <defs>
+                            <linearGradient id="gA" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stop-color="#fff36a" />
+                                <stop offset="30%" stop-color="#ffb84d" />
+                                <stop offset="80%" stop-color="#ff6b3a" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M12 0 C8 8, 4 14, 6 22 C9 32, 15 32, 18 22 C20 14,16 8,12 0 Z" fill="url(#gA)" />
+                    </svg></div>
+                <div class="puff" id="p1">💨</div>
+            </div>
+            <div class="candle c2">
+                <div class="wick"></div>
+                <div class="flame" id="f2"><svg viewBox="0 0 24 40">
+                        <path d="M12 0 C8 8, 4 14, 6 22 C9 32, 15 32, 18 22 C20 14,16 8,12 0 Z" fill="url(#gA)" />
+                    </svg></div>
+                <div class="puff" id="p2">💨</div>
+            </div>
+            <div class="candle c3">
+                <div class="wick"></div>
+                <div class="flame" id="f3"><svg viewBox="0 0 24 40">
+                        <path d="M12 0 C8 8, 4 14, 6 22 C9 32, 15 32, 18 22 C20 14,16 8,12 0 Z" fill="url(#gA)" />
+                    </svg></div>
+                <div class="puff" id="p3">💨</div>
+            </div>
+            <div class="candle c4">
+                <div class="wick"></div>
+                <div class="flame" id="f4"><svg viewBox="0 0 24 40">
+                        <path d="M12 0 C8 8, 4 14, 6 22 C9 32, 15 32, 18 22 C20 14,16 8,12 0 Z" fill="url(#gA)" />
+                    </svg></div>
+                <div class="puff" id="p4">💨</div>
+            </div>
+            <div class="candle c5">
+                <div class="wick"></div>
+                <div class="flame" id="f5"><svg viewBox="0 0 24 40">
+                        <path d="M12 0 C8 8, 4 14, 6 22 C9 32, 15 32, 18 22 C20 14,16 8,12 0 Z" fill="url(#gA)" />
+                    </svg></div>
+                <div class="puff" id="p5">💨</div>
+            </div>
+
+            <div id="mic-controls">
+                <button id="btn-enable" class="btn primary">Enable Mic & Blow</button>
+                <button id="btn-skip" class="btn ghost">Skip to Tree</button>
+                <div id="mic-indicator"></div>
+            </div>
+        </div>
+
+        <!-- Tree + Text -->
+        <div id="wrap">
+            <!-- <canvas  id="canvas" width="1100" height="680"></canvas> -->
+             <iframe  id="canvas" src="/index.html" width="1100" height="680" style="border:none;"></iframe>
+
+            <div id="code">
+                <span>My beautiful wife 💞</span><br>
+                <span>Happy Birthday 🎈</span><br>
+                <span>May Allah bless you 🍀</span><br>
+                <span>And give u many happiness 💕</span><br>
+                <span>I loved you ❤️</span><br>
+                <span>And I will always love u 🥺 ❤️</span><br>
+                <span>Hope u have a great day today ❤️😘</span><br>
+            </div>
+            <div id="clock-box">Current Time: <span id="clock"></span></div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Clock
+        function updateClock() { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); requestAnimationFrame(updateClock); }
+        updateClock();
+
+        // Audio
+        let audioEl = document.getElementById('myAudio'); audioEl.play().catch(() => { });
+
+        // Mic & Blow Detection
+        let listening = false, blowDetected = false, rafId;
+        const btnEnable = document.getElementById('btn-enable');
+        const btnSkip = document.getElementById('btn-skip');
+        const micInd = document.getElementById('mic-indicator');
+        btnEnable.addEventListener('click', () => {
+            if (listening) return;
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const analyser = audioCtx.createAnalyser(); analyser.fftSize = 2048;
+                const source = audioCtx.createMediaStreamSource(stream); source.connect(analyser);
+                listening = true; micInd.classList.add('listening');
+                let data = new Float32Array(analyser.fftSize);
+                function loop() {
+                    analyser.getFloatTimeDomainData(data);
+                    let sum = 0; for (let i = 0; i < data.length; i++) sum += data[i] * data[i];
+                    let rms = Math.sqrt(sum / data.length);
+                    if (!blowDetected && rms > 0.12) { blowDetected = true; extinguishCandles(); setTimeout(goToTree, 900); }
+                    rafId = requestAnimationFrame(loop);
+                }
+                loop();
+            }).catch(() => { alert('Microphone access denied'); });
+        });
+        btnSkip.addEventListener('click', goToTree);
+
+        function extinguishCandles() {
+            document.querySelectorAll('.flame').forEach((f, idx) => {
+                let puff = document.getElementById('p' + (idx + 1));
+                if (puff) { puff.classList.add('show'); setTimeout(() => { puff.classList.remove('show'); }, 900); }
+                f.classList.add('out');
+            });
+            if (rafId) cancelAnimationFrame(rafId);
+            listening = false; micInd.classList.remove('listening');
+            btnEnable.style.display = 'none'; btnSkip.style.display = 'none';
+        }
+
+        // Tree Animation with bloom
+        function goToTree() {
+            document.getElementById('cake-container').style.display = 'none';
+            document.getElementById('wrap').style.display = 'block';
+            const canvas = document.getElementById('canvas'); const ctx = canvas.getContext('2d');
+            const treeImg = new Image(); treeImg.src = 'img2.png';
+            treeImg.onload = () => { ctx.drawImage(treeImg, 0, 0, canvas.width, canvas.height); startBloom(); };
+            $('#code').fadeIn(1000);
+        }
+
+        // Simple bloom effect
+        // function startBloom() {
+        //     const canvas = document.getElementById('canvas'); const ctx = canvas.getContext('2d');
+        //     const flowers = [];
+        //     for (let i = 0; i < 300; i++) {
+        //         flowers.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height * 0.7, opacity: 0, r: 4 + Math.random() * 3 });
+        //     }
+        //     function animateBloom() {
+        //         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        //         const treeImg = new Image(); treeImg.src = 'img2.png'; ctx.drawImage(treeImg, 0, 0, canvas.width, canvas.height);
+        //         flowers.forEach(f => {
+        //             if (f.opacity < 1) f.opacity += 0.01;
+        //             ctx.beginPath();
+        //             const gradient = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
+        //             gradient.addColorStop(0, '#fffacd'); gradient.addColorStop(0.5, '#ff69b4'); gradient.addColorStop(1, '#ff1493');
+        //             ctx.fillStyle = gradient; ctx.globalAlpha = f.opacity; ctx.shadowColor = '#ff69b4'; ctx.shadowBlur = 10;
+        //             ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2); ctx.fill(); ctx.closePath();
+        //         });
+        //         ctx.globalAlpha = 1; requestAnimationFrame(animateBloom);
+        //     }
+        //     animateBloom();
+        // }
+    </script>
+</body>
+
+</html>
